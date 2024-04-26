@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import "./App.css";
+import WaveSurferComponent from "./components/WaveSurferComponent";
 
 const getMediaStream = async () => {
   return await navigator.mediaDevices.getUserMedia({
@@ -8,6 +9,8 @@ const getMediaStream = async () => {
   });
   // }
 };
+
+// TODO: Add web speech API for speech recognition
 
 function App() {
   const [recorderUrl, setRecorderUrl] = useState("");
@@ -57,13 +60,17 @@ function App() {
   };
 
   return (
-    <div className="flex gap-4 justify-center items-center">
-      <audio src={recorderUrl} controls />
-      <button onClick={startRecording}>Start</button>
-      <button onClick={stopRecording}>Stop</button>
-      {/* <button>Pause</button>
+    <>
+      <WaveSurferComponent audioUrl={recorderUrl} />
+      <WaveSurferComponent audioUrl={recorderUrl} />
+      <div className="flex gap-4 justify-center items-center">
+        <audio src={recorderUrl} controls />
+        <button onClick={startRecording}>Start</button>
+        <button onClick={stopRecording}>Stop</button>
+        {/* <button>Pause</button>
       <button>Download</button> */}
-    </div>
+      </div>
+    </>
   );
 }
 
