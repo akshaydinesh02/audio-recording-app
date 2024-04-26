@@ -1,35 +1,70 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useRef, useState } from "react";
+import "./App.css";
+
+const getMediaStream = async () => {
+  return await navigator.mediaDevices.getUserMedia({
+    video: false,
+    audio: true,
+  });
+  // }
+};
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [recorderUrl, setRecorderUrl] = useState("");
+  const mediaStream = useRef<MediaStream | null>(null);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const mediaChunks = useRef<Blob[] | null>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await getMediaStream();
+      mediaStream.current = stream;
+      mediaRecorder.current = new MediaRecorder(stream);
+
+      // Store audio buffers into media chunks array
+      mediaRecorder.current.ondataavailable = (e: BlobEvent) => {
+        if (e.data.size > 0) {
+          mediaChunks.current?.push(e.data);
+        }
+      };
+
+      // Store last blob when recording stops
+      mediaRecorder.current.onstop = () => {
+        if (!mediaChunks.current?.length) return;
+        const recordedBlob = new Blob(mediaChunks.current, {
+          type: "audio/webm",
+        });
+
+        const url = URL.createObjectURL(recordedBlob);
+        setRecorderUrl(url);
+        mediaChunks.current = [];
+      };
+
+      mediaRecorder.current.start();
+    } catch (error: unknown) {
+      console.error("Error while starting to record", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
+      mediaRecorder.current.stop();
+    }
+
+    if (mediaStream.current) {
+      mediaStream.current.getTracks().forEach((track) => track.stop());
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="flex gap-4 justify-center items-center">
+      <audio src={recorderUrl} controls />
+      <button onClick={startRecording}>Start</button>
+      <button onClick={stopRecording}>Stop</button>
+      {/* <button>Pause</button>
+      <button>Download</button> */}
+    </div>
+  );
 }
 
-export default App
+export default App;
