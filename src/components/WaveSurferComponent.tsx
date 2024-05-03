@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import WaveSurfer from "wavesurfer.js";
+import { WaveSurferOptions } from "wavesurfer.js/dist/types.js";
 
 interface IWaveSurferComponent {
   audioUrl: string;
@@ -16,6 +17,10 @@ const WaveSurferComponent = (props: IWaveSurferComponent) => {
       waveColor: "#4F4A85",
       progressColor: "#383351",
       url: audioUrl,
+      dragToSeek: true,
+      // duration: 10,
+      mediaControls: true,
+      autoScroll: true,
     });
 
     waveSurferRef.current = wavesurfer;
@@ -27,13 +32,7 @@ const WaveSurferComponent = (props: IWaveSurferComponent) => {
     };
   }, [audioUrl]);
 
-  return (
-    <div
-      className="w-full h-full"
-      style={{ border: "1px solid grey" }}
-      id="waveform"
-    ></div>
-  );
+  return <div className="w-full h-full" id="waveform"></div>;
 };
 
 export default WaveSurferComponent;
