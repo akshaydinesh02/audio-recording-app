@@ -4,22 +4,25 @@ import { WaveSurferOptions } from "wavesurfer.js/dist/types.js";
 
 interface IWaveSurferComponent {
   audioUrl: string;
+  mediaElRef: HTMLMediaElement;
 }
 
 const WaveSurferComponent = (props: IWaveSurferComponent) => {
   const waveSurferRef = useRef<WaveSurfer | null>(null);
-  const { audioUrl } = props;
+  const { audioUrl, mediaElRef } = props;
 
   useEffect(() => {
     if (!audioUrl) return;
     const wavesurfer = WaveSurfer.create({
       container: "#waveform",
-      waveColor: "#4F4A85",
+      waveColor: "#ffffff",
       progressColor: "#383351",
       url: audioUrl,
       dragToSeek: true,
       // duration: 10,
-      mediaControls: true,
+      // mediaControls: true,
+      autoCenter: true,
+      media: mediaElRef,
       autoScroll: true,
     });
 
@@ -32,7 +35,10 @@ const WaveSurferComponent = (props: IWaveSurferComponent) => {
     };
   }, [audioUrl]);
 
-  return <div className="w-full h-full" id="waveform"></div>;
+  console.log(waveSurferRef.current);
+  if (!audioUrl.length) return <></>;
+
+  return <div id="waveform"></div>;
 };
 
 export default WaveSurferComponent;

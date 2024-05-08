@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
-import WaveSurferComponent from "./components/WaveSurferComponent";
+// import WaveSurferComponent from "./components/WaveSurferComponent";
 // import WaveComponent from "./components/WaveComponent";
 import { continuousVisualizer, VisualizerFunctions } from "sound-visualizer";
+import WaveSurfer from "wavesurfer.js";
 
 const getMediaStream = async () => {
   return await navigator.mediaDevices.getUserMedia({
@@ -15,10 +16,7 @@ const getMediaStream = async () => {
 // TODO: Add web speech API for speech recognition
 
 function App() {
-  const [status, setStatus] = useState<string | null>(null);
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
-  const [audioType, setAudioType] = useState<string | null>(null);
-  const [audioProps, setAudioProps] = useState<any | null>(null);
+  const [recording, setRecording] = useState<boolean>(false);
 
   const [recorderUrl, setRecorderUrl] = useState("");
   const mediaStream = useRef<MediaStream | null>(null);
@@ -27,29 +25,8 @@ function App() {
 
   const waveFunctionRef = useRef<VisualizerFunctions | null>(null);
   const recordingCanvasRef = useRef(null);
-  // const currentRecordingCanvasRef = useRef(null);
-  // const continuousRecordingCanvasRef = useRef(null);
-
-  const startCallback = (e: Event) => {
-    console.log("succ start", e);
-  };
-
-  const pauseCallback = (e: Event) => {
-    console.log("succ pause", e);
-  };
-
-  const stopCallback = (e: Blob) => {
-    setAudioSrc(window.URL.createObjectURL(e));
-    console.log("succ stop", e);
-  };
-
-  const onRecordCallback = (e: Event) => {
-    console.log("recording", e);
-  };
-
-  const errorCallback = (err: Error) => {
-    console.log("error", err);
-  };
+  const mediaElRef = useRef<HTMLMediaElement>(null);
+  const waveSurferRef = useRef<WaveSurfer | null>(null);
 
   const startRecording = async () => {
     try {
@@ -68,7 +45,7 @@ function App() {
       mediaRecorder.current.onstop = () => {
         if (!mediaChunks.current?.length) return;
         const recordedBlob = new Blob(mediaChunks.current, {
-          type: "audio/webm",
+          type: "audio/mpeg",
         });
 
         const url = URL.createObjectURL(recordedBlob);
@@ -77,14 +54,16 @@ function App() {
       };
 
       mediaRecorder.current.start();
+      setRecording(true);
 
       if (recordingCanvasRef.current) {
         const waveFunction = continuousVisualizer(
           mediaStream.current,
           recordingCanvasRef.current,
           {
-            lineWidth: "thin",
-            strokeColor: "#4F4A85",
+            lineWidth: 1,
+            strokeColor: "#8c8c8c",
+            slices: 150,
           }
         );
         waveFunctionRef.current = waveFunction;
@@ -92,6 +71,7 @@ function App() {
       }
     } catch (error: unknown) {
       console.error("Error while starting to record", error);
+      setRecording(false);
     }
   };
 
@@ -107,35 +87,83 @@ function App() {
     if (recordingCanvasRef.current && waveFunctionRef.current) {
       waveFunctionRef.current.reset();
     }
+
+    setRecording(false);
   };
 
-  useEffect(() => {
-    const audioPropsInternal = {
-      audioType,
-      status,
-      audioSrc,
-      timeslice: 1000,
-      startCallback,
-      pauseCallback,
-      stopCallback,
-      onRecordCallback,
-      errorCallback,
-    };
+  const resetRecording = () => {
+    stopRecording();
+    setRecorderUrl("");
 
-    setAudioProps(audioPropsInternal);
-  }, [status, audioSrc, audioType]);
+    if (waveSurferRef.current) {
+      waveSurferRef.current.empty();
+    }
+  };
+
+  // const downloadAudio = () => {
+  //   const link = document.createElement("a");
+  //   link.href = recorderUrl;
+  //   link.download = "test-file-name";
+
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // };
+
+  useEffect(() => {
+    if (!recorderUrl || !mediaElRef.current) return;
+    const wavesurfer = WaveSurfer.create({
+      container: "#waveform",
+      waveColor: "#8c8c8c",
+      progressColor: "#30fc03",
+      url: recorderUrl,
+      dragToSeek: true,
+      autoCenter: true,
+      media: mediaElRef.current,
+      autoScroll: true,
+      interact: true,
+      normalize: true,
+    });
+
+    waveSurferRef.current = wavesurfer;
+    waveSurferRef.current.on("timeupdate", () => {
+      //
+    });
+
+    waveSurferRef.current.load(recorderUrl);
+
+    return () => {
+      wavesurfer.destroy();
+      waveSurferRef.current?.unAll();
+      waveSurferRef.current?.destroy();
+    };
+  }, [recorderUrl]);
 
   return (
-    <div className="w-full p-24">
-      <canvas className="border w-full" ref={recordingCanvasRef} />
-      <WaveSurferComponent audioUrl={recorderUrl} />
-      <div className="w-[50%] flex gap-4 justify-center items-center">
-        {/* <audio src={recorderUrl} controls /> */}
-        <button onClick={startRecording}>Start</button>
-        <button onClick={stopRecording}>Stop</button>
-        {/* <button>Pause</button>
-      <button>Download</button> */}
+    <div className="w-full h-full">
+      <div className="w-full h-44 rounded-lg bg-gray-900 my-auto">
+        <canvas
+          className={!recording ? "hidden" : "" + `w-[30%] h-[80%] py-2 m-auto`}
+          ref={recordingCanvasRef}
+        />
+        <div id="waveform" />
       </div>
+
+      <div className="w-[50%] flex gap-4 items-center">
+        <button
+          onClick={startRecording}
+          disabled={recording || recorderUrl.length > 0}
+        >
+          Start
+        </button>
+        <button onClick={stopRecording} disabled={!recording}>
+          Stop
+        </button>
+        <button onClick={resetRecording}>Reset</button>
+        {/* <button>Pause</button> */}
+        {/* <button onClick={downloadAudio}>Download</button> */}
+      </div>
+      <audio ref={mediaElRef} src={recorderUrl} controls />
     </div>
   );
 }
