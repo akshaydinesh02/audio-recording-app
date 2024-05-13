@@ -4,6 +4,7 @@ import "./App.css";
 // import WaveComponent from "./components/WaveComponent";
 import { continuousVisualizer, VisualizerFunctions } from "sound-visualizer";
 import WaveSurfer from "wavesurfer.js";
+import Details from "./components/Details";
 
 const getMediaStream = async () => {
   return await navigator.mediaDevices.getUserMedia({
@@ -164,6 +165,7 @@ function App() {
         {/* <button onClick={downloadAudio}>Download</button> */}
       </div>
       <audio ref={mediaElRef} src={recorderUrl} controls />
+      <Details />
     </div>
   );
 }
