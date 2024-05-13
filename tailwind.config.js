@@ -10,6 +10,7 @@ export default {
       colors: {
         header: "#fff9",
         body: "#fff6",
+        "record-button-bg": "#860909",
       },
       fontSize: {
         header: "22px",

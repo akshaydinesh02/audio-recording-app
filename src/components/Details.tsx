@@ -35,8 +35,7 @@ const data = [
 
 const Details = () => {
   return (
-    <div className="container px-4">
-      <h1 className="p-4 text-gray-300 text-center">About</h1>
+    <div className="container p-12">
       <div className="p-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {data.map((d, i) => (
           <Card key={i} title={d.title} details={d.details} />
