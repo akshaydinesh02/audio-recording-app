@@ -6,9 +6,15 @@ import Recorder from "./components/Recorder";
 
 function App() {
   return (
-    <div>
+    <div className="relative">
+      <div className="text-header bg-neutral-900 text-center py-3 sticky top-0 w-full">
+        <p>Simple Voice Recorder</p>
+      </div>
       <Recorder />
       <Details />
+      <div className="text-header bg-neutral-900 text-center py-3 sticky -bottom-0 z-10 w-full">
+        <p>Footer</p>
+      </div>
     </div>
   );
 }

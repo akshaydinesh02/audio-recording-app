@@ -2,7 +2,7 @@ import Card from "./Card";
 
 const data = [
   {
-    title: "Effortless Sound Recorder",
+    title: "Simple Sound Recorder",
     details:
       "Our Sound Recorder is a user-friendly and convenient online tool that can be accessed directly in your web browser. It enables you to capture audio using your microphone and save it as an MP3 file.",
   },
@@ -27,7 +27,7 @@ const data = [
       "Once your recording is complete, you can trim it to include only the necessary sections.",
   },
   {
-    title: "Automatic Silence Removal",
+    title: "Auto Silence Removal",
     details:
       "Our Voice Recorder automatically detects and removes silent sections at the start and end of your recording for your convenience.",
   },
