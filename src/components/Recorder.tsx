@@ -7,6 +7,8 @@ import { Close } from "../Icons/Close";
 import { Download } from "../Icons/Download";
 import { Play } from "../Icons/Play";
 import { Pause } from "../Icons/Pause";
+import RestartModal from "./RestartModal";
+// import RestartModal from "./RestartModal";
 
 const getMediaStream = async () => {
   return await navigator.mediaDevices.getUserMedia({
@@ -20,6 +22,8 @@ const Recorder = () => {
   const [recording, setRecording] = useState<boolean>(false);
   const [recorderUrl, setRecorderUrl] = useState<string>("");
   const [audioPlaying, setAudioPlaying] = useState<boolean>(false);
+  const [restartRecordingModalShowing, setRestartRecordingModalShowing] =
+    useState<boolean>(false);
 
   const mediaStream = useRef<MediaStream | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
@@ -50,7 +54,7 @@ const Recorder = () => {
     const wavesurfer = WaveSurfer.create({
       container: "#waveform",
       waveColor: "#8c8c8c",
-      progressColor: "#30fc03",
+      progressColor: "#FF0000",
       url: recorderUrl,
       dragToSeek: true,
       autoCenter: true,
@@ -66,6 +70,11 @@ const Recorder = () => {
       //
     });
 
+    waveSurferRef.current.on("finish", () => {
+      waveSurferRef.current?.seekTo(0);
+      setAudioPlaying(false);
+    });
+
     waveSurferRef.current.load(recorderUrl);
 
     mediaElRef.current.addEventListener("play", handlePlay);
@@ -75,10 +84,13 @@ const Recorder = () => {
       wavesurfer.destroy();
       waveSurferRef.current?.unAll();
       waveSurferRef.current?.destroy();
+      mediaElRef.current?.removeEventListener("play", handlePlay);
+      mediaElRef.current?.removeEventListener("onpause", handlePause);
     };
   }, [recorderUrl]);
 
   const startRecording = async () => {
+    console.log("Triggering start recording");
     try {
       const stream = await getMediaStream();
       mediaStream.current = stream;
@@ -125,28 +137,82 @@ const Recorder = () => {
     }
   };
 
+  // const toggleRecording = async () => {
+  //   console.log("Triggering toggleRecording recording");
+
+  //   try {
+  //     if (
+  //       mediaRecorder.current &&
+  //       mediaRecorder.current?.state === "recording" &&
+  //       waveFunctionRef.current
+  //     ) {
+  //       console.log("Inside if");
+  //       mediaRecorder.current.pause();
+  //       waveFunctionRef.current.stop();
+  //       // console.log("");
+  //     } else if (
+  //       mediaRecorder.current &&
+  //       mediaRecorder.current?.state === "paused" &&
+  //       waveFunctionRef.current
+  //     ) {
+  //       console.log("Inside else if");
+  //       mediaRecorder.current.resume();
+  //       // // waveFunctionRef.current.start();
+
+  //       // if (recordingCanvasRef.current && mediaStream.current) {
+  //       //   const waveFunction = continuousVisualizer(
+  //       //     mediaStream.current,
+  //       //     recordingCanvasRef.current,
+  //       //     {
+  //       //       lineWidth: 1,
+  //       //       strokeColor: "#8c8c8c",
+  //       //       slices: 150,
+  //       //     }
+  //       //   );
+  //       //   waveFunctionRef.current = waveFunction;
+  //       //   waveFunctionRef.current.start();
+  //       // }
+  //     }
+  //   } catch (error: unknown) {
+  //     console.error("Error while trying to pause recorder", error);
+  //   }
+  // };
+
   const stopRecording = () => {
-    if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-      mediaRecorder.current.stop();
-    }
+    console.log("Triggering stopRecording recording");
+    try {
+      if (
+        mediaRecorder.current &&
+        mediaRecorder.current.state === "recording"
+      ) {
+        mediaRecorder.current.stop();
+      }
 
-    if (mediaStream.current) {
-      mediaStream.current.getTracks().forEach((track) => track.stop());
-    }
+      if (mediaStream.current) {
+        mediaStream.current.getTracks().forEach((track) => track.stop());
+      }
 
-    if (recordingCanvasRef.current && waveFunctionRef.current) {
-      waveFunctionRef.current.reset();
-    }
+      if (recordingCanvasRef.current && waveFunctionRef.current) {
+        waveFunctionRef.current.reset();
+      }
 
-    setRecording(false);
+      setRecording(false);
+    } catch (error: unknown) {
+      console.error("Error while trying to stop recorder", error);
+    }
   };
 
   const resetRecording = () => {
-    stopRecording();
-    setRecorderUrl("");
+    console.log("Triggering resetRecording recording");
+    try {
+      stopRecording();
+      setRecorderUrl("");
 
-    if (waveSurferRef.current) {
-      waveSurferRef.current.empty();
+      if (waveSurferRef.current) {
+        waveSurferRef.current.empty();
+      }
+    } catch (error: unknown) {
+      console.error("Error while trying to reset recorder", error);
     }
   };
 
@@ -188,15 +254,26 @@ const Recorder = () => {
       <div className="flex items-center justify-center">
         {/* Stop recording button */}
         {recording ? (
-          <button
-            onClick={stopRecording}
-            disabled={!recording}
-            className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer"
-          >
-            <div className="bg-record-button-bg rounded-full p-2">
-              <StopRecording />
-            </div>
-          </button>
+          <>
+            <button
+              onClick={stopRecording}
+              disabled={!recording}
+              className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer"
+            >
+              <div className="bg-record-button-bg rounded-full p-2">
+                <StopRecording />
+              </div>
+            </button>
+            {/* <button
+              onClick={toggleRecording}
+              disabled={!recording}
+              className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer"
+            >
+              <div className="bg-record-button-bg rounded-full p-2">
+                <Pause />
+              </div>
+            </button> */}
+          </>
         ) : (
           <></>
         )}
@@ -224,7 +301,7 @@ const Recorder = () => {
         {/* Close/Restart recording button */}
         {!recording && recorderUrl.length > 0 ? (
           <button
-            onClick={resetRecording}
+            onClick={() => setRestartRecordingModalShowing(true)}
             className="bg-transparent rounded-full p-1 border-none absolute top-4 right-4 outline-none"
           >
             <Close />
@@ -242,7 +319,7 @@ const Recorder = () => {
               className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer"
             >
               <div
-                className={`bg-record-button-bg rounded-full p-2 ${
+                className={`flex justify-center items-center bg-gray-700 rounded-full p-2 ${
                   recording || recorderUrl.length > 0
                 } ? "bg-gray-500" : ""
             }`}
@@ -253,10 +330,10 @@ const Recorder = () => {
             {/* Download */}
             <button
               onClick={downloadAudio}
-              className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer"
+              className="rounded-full p-1 hover:border-[1px] hover:border-download-button-bg cursor-pointer"
             >
               <div
-                className={`bg-record-button-bg rounded-full p-2 ${
+                className={`bg-download-button-bg rounded-full p-2 ${
                   recording || recorderUrl.length > 0
                 } ? "bg-gray-500" : ""
             }`}
@@ -272,6 +349,11 @@ const Recorder = () => {
       <div className="w-full flex justify-center items-center">
         <audio ref={mediaElRef} src={recorderUrl} />
       </div>
+      <RestartModal
+        restartRecordingModalShowing={restartRecordingModalShowing}
+        setRestartRecordingModalShowing={setRestartRecordingModalShowing}
+        clickHandler={resetRecording}
+      />
     </div>
   );
 };

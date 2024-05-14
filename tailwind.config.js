@@ -11,6 +11,8 @@ export default {
         header: "#fff9",
         body: "#fff6",
         "record-button-bg": "#860909",
+        "download-button-bg": "#104275",
+        "play-button-bg": "#0F4C01",
       },
       fontSize: {
         header: "22px",
