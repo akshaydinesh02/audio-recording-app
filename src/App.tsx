@@ -8,7 +8,7 @@ function App() {
   return (
     <div className="relative">
       <div className="text-header bg-neutral-900 text-center py-3 sticky top-0 w-full">
-        <p>Simple Voice Recorder</p>
+        <p>Simple Voice Recorder - test</p>
       </div>
       <Recorder />
       <Details />
