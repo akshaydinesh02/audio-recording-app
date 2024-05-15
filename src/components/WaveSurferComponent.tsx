@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import WaveSurfer from "wavesurfer.js";
-import { WaveSurferOptions } from "wavesurfer.js/dist/types.js";
 
 interface IWaveSurferComponent {
   audioUrl: string;
