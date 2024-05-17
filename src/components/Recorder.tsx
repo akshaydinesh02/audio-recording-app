@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { continuousVisualizer, VisualizerFunctions } from "sound-visualizer";
 import WaveSurfer from "wavesurfer.js";
 import { RecordAudio } from "../Icons/RecordAudio";
@@ -8,14 +8,13 @@ import { Download } from "../Icons/Download";
 import { Play } from "../Icons/Play";
 import { Pause } from "../Icons/Pause";
 import RestartModal from "./RestartModal";
-// import RestartModal from "./RestartModal";
+import Button from "./Button";
 
 const getMediaStream = async () => {
   return await navigator.mediaDevices.getUserMedia({
     video: false,
     audio: true,
   });
-  // }
 };
 
 const Recorder = () => {
@@ -34,19 +33,19 @@ const Recorder = () => {
   const mediaElRef = useRef<HTMLMediaElement>(null);
   const waveSurferRef = useRef<WaveSurfer | null>(null);
 
-  const handlePlay = () => {
+  const handlePlay = useCallback(() => {
     if (mediaElRef.current) {
       mediaElRef.current?.play();
       setAudioPlaying(true);
     }
-  };
+  }, []);
 
-  const handlePause = () => {
+  const handlePause = useCallback(() => {
     if (mediaElRef.current) {
       mediaElRef.current?.pause();
       setAudioPlaying(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // WaveSurfer
@@ -62,13 +61,10 @@ const Recorder = () => {
       autoScroll: true,
       interact: true,
       normalize: true,
+      minPxPerSec: 20,
     });
 
     waveSurferRef.current = wavesurfer;
-    waveSurferRef.current.on("timeupdate", () => {
-      // console.log("Time update", waveSurferRef.current?.getCurrentTime());
-      //
-    });
 
     waveSurferRef.current.on("finish", () => {
       waveSurferRef.current?.seekTo(0);
@@ -89,8 +85,7 @@ const Recorder = () => {
     };
   }, [recorderUrl]);
 
-  const startRecording = async () => {
-    console.log("Triggering start recording");
+  const startRecording = useCallback(async () => {
     try {
       const stream = await getMediaStream();
       mediaStream.current = stream;
@@ -106,9 +101,7 @@ const Recorder = () => {
       // Store last blob when recording stops
       mediaRecorder.current.onstop = () => {
         if (!mediaChunks.current?.length) return;
-        const recordedBlob = new Blob(mediaChunks.current, {
-          type: "audio/mpeg",
-        });
+        const recordedBlob = new Blob(mediaChunks.current);
 
         const url = URL.createObjectURL(recordedBlob);
         setRecorderUrl(url);
@@ -135,10 +128,10 @@ const Recorder = () => {
       console.error("Error while starting to record", error);
       setRecording(false);
     }
-  };
+  }, []);
 
   // const toggleRecording = async () => {
-  //   console.log("Triggering toggleRecording recording");
+  //
 
   //   try {
   //     if (
@@ -146,16 +139,16 @@ const Recorder = () => {
   //       mediaRecorder.current?.state === "recording" &&
   //       waveFunctionRef.current
   //     ) {
-  //       console.log("Inside if");
+  //
   //       mediaRecorder.current.pause();
   //       waveFunctionRef.current.stop();
-  //       // console.log("");
+  //       //
   //     } else if (
   //       mediaRecorder.current &&
   //       mediaRecorder.current?.state === "paused" &&
   //       waveFunctionRef.current
   //     ) {
-  //       console.log("Inside else if");
+  //
   //       mediaRecorder.current.resume();
   //       // // waveFunctionRef.current.start();
 
@@ -178,8 +171,7 @@ const Recorder = () => {
   //   }
   // };
 
-  const stopRecording = () => {
-    console.log("Triggering stopRecording recording");
+  const stopRecording = useCallback(() => {
     try {
       if (
         mediaRecorder.current &&
@@ -200,10 +192,9 @@ const Recorder = () => {
     } catch (error: unknown) {
       console.error("Error while trying to stop recorder", error);
     }
-  };
+  }, []);
 
-  const resetRecording = () => {
-    console.log("Triggering resetRecording recording");
+  const resetRecording = useCallback(() => {
     try {
       stopRecording();
       setRecorderUrl("");
@@ -214,36 +205,36 @@ const Recorder = () => {
     } catch (error: unknown) {
       console.error("Error while trying to reset recorder", error);
     }
-  };
+  }, []);
 
-  const downloadAudio = () => {
-    console.log("Download audio function");
-    // const link = document.createElement("a");
-    // link.href = recorderUrl;
-    // link.download = "test-file-name";
+  const downloadAudio = useCallback(() => {
+    const link = document.createElement("a");
+    link.href = recorderUrl;
+    const id = `voice-recorder-by-Akshay-${Date.now().toString()}.mp3`;
+    link.download = id;
 
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
-  };
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, []);
 
   return (
     <div className="w-full h-full p-12 border-y-[2px] border-gray-600 bg-neutral-950 relative">
       <p
-        className={`absolute z-0 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-600 font-light text-body ${
+        className={`absolute z-0 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-600 font-light text-body w-full text-center ${
           recording
             ? "opacity-0 duration-500 delay-200 transition-opacity ease-in-out"
             : ""
-        }`}
+        } ${!recording && recorderUrl.length ? "hidden" : ""}`}
       >
         Click on the button to start recording...
       </p>
 
       <div className="flex justify-center items-center w-full z-10">
-        <div className="w-[70%] h-44 rounded-lg  my-auto">
+        <div className="w-[80%] h-44 rounded-lg my-auto">
           <canvas
             className={
-              !recording ? "hidden" : "" + `w-[30%] h-[80%] py-2 m-auto`
+              !recording ? "hidden" : "" + `w-[70%] h-[80%] py-2 m-auto`
             }
             ref={recordingCanvasRef}
           />
@@ -255,7 +246,7 @@ const Recorder = () => {
         {/* Stop recording button */}
         {recording ? (
           <>
-            <button
+            <Button
               onClick={stopRecording}
               disabled={!recording}
               className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer"
@@ -263,7 +254,7 @@ const Recorder = () => {
               <div className="bg-record-button-bg rounded-full p-2">
                 <StopRecording />
               </div>
-            </button>
+            </Button>
             {/* <button
               onClick={toggleRecording}
               disabled={!recording}
@@ -280,7 +271,7 @@ const Recorder = () => {
 
         {/* Record button */}
         {!recording && !recorderUrl.length ? (
-          <button
+          <Button
             onClick={startRecording}
             disabled={recording || recorderUrl.length > 0}
             className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer disabled:cursor-not-allowed"
@@ -293,19 +284,19 @@ const Recorder = () => {
             >
               <RecordAudio />
             </div>
-          </button>
+          </Button>
         ) : (
           <></>
         )}
 
         {/* Close/Restart recording button */}
         {!recording && recorderUrl.length > 0 ? (
-          <button
+          <Button
             onClick={() => setRestartRecordingModalShowing(true)}
             className="bg-transparent rounded-full p-1 border-none absolute top-4 right-4 outline-none"
           >
             <Close />
-          </button>
+          </Button>
         ) : (
           <></>
         )}
@@ -314,7 +305,7 @@ const Recorder = () => {
         {!recording && recorderUrl.length > 0 ? (
           <div className="flex gap-2">
             {/* Play */}
-            <button
+            <Button
               onClick={audioPlaying ? handlePause : handlePlay}
               className="rounded-full p-1 hover:border-[1px] hover:border-record-button-bg cursor-pointer"
             >
@@ -326,9 +317,10 @@ const Recorder = () => {
               >
                 {audioPlaying ? <Pause /> : <Play />}
               </div>
-            </button>
+            </Button>
+
             {/* Download */}
-            <button
+            <Button
               onClick={downloadAudio}
               className="rounded-full p-1 hover:border-[1px] hover:border-download-button-bg cursor-pointer"
             >
@@ -340,7 +332,7 @@ const Recorder = () => {
               >
                 <Download />
               </div>
-            </button>
+            </Button>
           </div>
         ) : (
           <></>
